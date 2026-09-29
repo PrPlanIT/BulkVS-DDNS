@@ -1,0 +1,4 @@
+/bulkvs-ddns
+/dist/
+*.test
+*.out
