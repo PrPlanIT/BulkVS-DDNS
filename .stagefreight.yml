@@ -38,10 +38,10 @@ metadata:
   category: infrastructure
   description:
     - Keeps a BulkVS SIP trunk's IP-auth allowlist synced to the site's current public IP.
-    - 'DDNS for a BulkVS SIP trunk: watches the site''s public IP and reconciles the BulkVS /ipHost allowlist so IP-based trunk auth keeps working across dynamic-WAN changes.'
+    - Syncs the BulkVS /ipHost allowlist to the site's public IP so IP-based SIP-trunk auth keeps working across dynamic-WAN changes.
   license: AGPL-3.0-only
   org: PrPlanIT
-  title: BulkVS DDNS
+  title: BulkVS IP-Sync
   topics:
     - bulkvs
     - sip-trunk
@@ -63,7 +63,7 @@ registries:
 repos:
   github-mirror:
     forge: github
-    project: PrPlanIT/BulkVS-DDNS
+    project: PrPlanIT/BulkVS-IP-Sync
     roles:
       - mirror
       - publish-origin
@@ -74,7 +74,7 @@ repos:
     branches:
       default: main
     forge: gitlab
-    project: PrPlanIT/BulkVS-DDNS
+    project: PrPlanIT/BulkVS-IP-Sync
     roles:
       - primary
     worktree: .
