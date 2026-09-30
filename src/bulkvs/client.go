@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,6 +44,15 @@ func New(base, auth string, hc *http.Client) *Client {
 	return &Client{base: strings.TrimRight(base, "/"), auth: auth, hc: hc}
 }
 
+// statusError carries a non-2xx HTTP status so callers can special-case a code
+// (e.g. a 404 on the list = empty allowlist, not a failure).
+type statusError struct {
+	code int
+	msg  string
+}
+
+func (e *statusError) Error() string { return e.msg }
+
 func (c *Client) do(ctx context.Context, method, path string, body, out any) error {
 	var r io.Reader
 	if body != nil {
@@ -68,7 +78,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	defer resp.Body.Close()
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("%s %s: status %d: %s", method, path, resp.StatusCode, strings.TrimSpace(string(data)))
+		return &statusError{code: resp.StatusCode, msg: fmt.Sprintf("%s %s: status %d: %s", method, path, resp.StatusCode, strings.TrimSpace(string(data)))}
 	}
 	if out != nil && len(bytes.TrimSpace(data)) > 0 {
 		if err := json.Unmarshal(data, out); err != nil {
@@ -78,10 +88,15 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	return nil
 }
 
-// ListHosts returns every /ipHost entry on the account.
+// ListHosts returns every /ipHost entry. BulkVS answers an empty allowlist with a
+// 404, so that means "no hosts" — not an error — which lets a wiped allowlist heal.
 func (c *Client) ListHosts(ctx context.Context) ([]Host, error) {
 	var hosts []Host
 	if err := c.do(ctx, http.MethodGet, "/ipHost", nil, &hosts); err != nil {
+		var se *statusError
+		if errors.As(err, &se) && se.code == http.StatusNotFound {
+			return []Host{}, nil
+		}
 		return nil, err
 	}
 	return hosts, nil
