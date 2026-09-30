@@ -71,10 +71,10 @@ func (c Config) AuthorizationHeader() string {
 // writes carries a machine-identifiable "managed by us" stamp. The friendly label
 // stays human-readable; the marker makes ownership unambiguous — a human-created
 // entry sharing the label won't carry the trailer, so it's never mistaken for ours.
-const descriptionMarker = "bulkvs-ddns"
+const descriptionMarker = "bulkvs-ip-sync"
 
 // EffectiveDescription is the Description actually written to — and matched in —
-// BulkVS: the operator's label with the marker appended, e.g. "pbx-host (bulkvs-ddns)".
+// BulkVS: the operator's label with the marker appended, e.g. "pbx-host (bulkvs-ip-sync)".
 // It is always non-empty (the marker is always present), so it is safe as the prune
 // ownership boundary even when BULKVS_HOST_DESCRIPTION is left blank.
 func (c Config) EffectiveDescription() string {

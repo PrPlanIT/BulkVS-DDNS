@@ -1,4 +1,4 @@
-// Command bulkvs-ddns keeps a BulkVS IP-based-auth host (/ipHost) in sync with the
+// Command bulkvs-ip-sync keeps a BulkVS IP-based-auth host (/ipHost) in sync with the
 // site's current public IP — DDNS for a BulkVS SIP trunk.
 package main
 
@@ -10,16 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/PrPlanIT/bulkvs-ddns/src/bulkvs"
-	"github.com/PrPlanIT/bulkvs-ddns/src/config"
-	"github.com/PrPlanIT/bulkvs-ddns/src/ipsource"
-	"github.com/PrPlanIT/bulkvs-ddns/src/reconcile"
-	"github.com/PrPlanIT/bulkvs-ddns/src/version"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/bulkvs"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/config"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/ipsource"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/reconcile"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/version"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.LUTC)
-	log.Printf("bulkvs-ddns %s starting", version.String())
+	log.Printf("bulkvs-ip-sync %s starting", version.String())
 
 	cfg, err := config.Load()
 	if err != nil {

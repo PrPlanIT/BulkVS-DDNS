@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PrPlanIT/bulkvs-ddns/src/bulkvs"
+	"github.com/PrPlanIT/bulkvs-ip-sync/src/bulkvs"
 )
 
 // Result summarises one reconcile pass.

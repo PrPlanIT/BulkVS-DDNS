@@ -1,4 +1,4 @@
-# bulkvs-ddns
+# bulkvs-ip-sync
 
 <!-- sf:project:start -->
 [![GitHub](https://img.shields.io/badge/GitHub-mirror-181717?logo=github)](https://github.com/PrPlanIT/BulkVS-DDNS) [![GitLab](https://img.shields.io/badge/GitLab-source-FC6D26?logo=gitlab)](https://gitlab.prplanit.com/PrPlanIT/BulkVS-DDNS) [![license](https://raw.githubusercontent.com/PrPlanIT/BulkVS-DDNS/main/.stagefreight/scribe/license.svg)](https://github.com/PrPlanIT/BulkVS-DDNS/blob/main/LICENSE) [![Open Issues](https://img.shields.io/github/issues/PrPlanIT/BulkVS-DDNS)](https://github.com/PrPlanIT/BulkVS-DDNS/issues) [![Open PRs](https://img.shields.io/github/issues-pr/PrPlanIT/BulkVS-DDNS)](https://github.com/PrPlanIT/BulkVS-DDNS/pulls) [![Contributors](https://img.shields.io/github/contributors/PrPlanIT/BulkVS-DDNS)](https://github.com/PrPlanIT/BulkVS-DDNS/graphs/contributors) [![donate](https://img.shields.io/badge/donate-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/T6T41IT163) [![sponsor](https://img.shields.io/badge/sponsor-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/PrPlanIT)
@@ -16,7 +16,7 @@ DDNS for a [BulkVS](https://www.bulkvs.com/) SIP trunk.
 
 BulkVS authenticates SIP trunks by source IP — you register your public IP as an
 **IP Host** (`/ipHost`, the portal's *Host → Add* screen). On a dynamic WAN that
-entry goes stale every time the IP rotates and calls break. `bulkvs-ddns` watches
+entry goes stale every time the IP rotates and calls break. `bulkvs-ip-sync` watches
 the site's current public IP and keeps the `/ipHost` allowlist in sync — the same
 job [`cloudflare-ddns`](https://github.com/favonia/cloudflare-ddns) does for DNS,
 pointed at BulkVS instead.
@@ -29,12 +29,12 @@ shell) — the whole thing is stdlib, no dependencies.
 1. Read the current public IPv4 from a Cloudflare-trace endpoint
    (`https://1.1.1.1/cdn-cgi/trace`) — the same source `cloudflare-ddns` uses.
 2. `PUT /ipHost` the current IP (upsert), tagged with your label plus the
-   auto-appended `(bulkvs-ddns)` marker.
+   auto-appended `(bulkvs-ip-sync)` marker.
 3. If pruning is on, `DELETE` every *other* `/ipHost` entry carrying that same
    marked Description — old rotated IPs and manual leftovers clean themselves up.
 
-**The marker is the ownership boundary.** The tool appends ` (bulkvs-ddns)` to your
-label and writes the composite (e.g. `pbx-host (bulkvs-ddns)`). Only entries whose
+**The marker is the ownership boundary.** The tool appends ` (bulkvs-ip-sync)` to your
+label and writes the composite (e.g. `pbx-host (bulkvs-ip-sync)`). Only entries whose
 `Description` equals that exact composite are ever read as "ours" or pruned —
 anything else, including a hand-made entry that happens to share your label, is left
 untouched. Because the marker is always appended, the label may even be blank.
@@ -53,7 +53,7 @@ case — we base64 it for you) **or** the portal's pre-computed Basic Auth heade
 | `BULKVS_API_USER`         | — (pair)                             | API username / account email (HTTP Basic) |
 | `BULKVS_API_KEY`          | — (pair)                             | API password/token (HTTP Basic) |
 | `BULKVS_BASIC_AUTH`       | — (optional)                         | pre-computed `Basic <b64>` header; overrides the pair, prefix optional |
-| `BULKVS_HOST_DESCRIPTION` | `pbx-host`                           | human label for this deployment; the tool appends ` (bulkvs-ddns)` before writing, so the stored Description reads `pbx-host (bulkvs-ddns)`. May be blank (marker alone) |
+| `BULKVS_HOST_DESCRIPTION` | `pbx-host`                           | human label for this deployment; the tool appends ` (bulkvs-ip-sync)` before writing, so the stored Description reads `pbx-host (bulkvs-ip-sync)`. May be blank (marker alone) |
 | `BULKVS_API_BASE`         | `https://portal.bulkvs.com/api/v1.0` | API root |
 | `BULKVS_MAX_OUT`          | *(empty)*                            | optional `MaxOut` stamped on the entry |
 | `IP_PROVIDER`             | `cloudflare.trace`                   | IP source (mirrors cloudflare-ddns) |
@@ -70,7 +70,7 @@ case — we base64 it for you) **or** the portal's pre-computed Basic Auth heade
 docker run --rm \
   -e BULKVS_API_USER=... -e BULKVS_API_KEY=... \
   -e BULKVS_HOST_DESCRIPTION=pbx-host \
-  prplanit/bulkvs-ddns
+  prplanit/bulkvs-ip-sync
 ```
 
 Start with `DRY_RUN=true` the first time to see exactly what it would add/prune.
@@ -86,7 +86,7 @@ Start with `DRY_RUN=true` the first time to see exactly what it would add/prune.
 ## Layout
 
 ```
-cmd/bulkvs-ddns   entrypoint + loop
+cmd/bulkvs-ip-sync   entrypoint + loop
 src/config        env config
 src/ipsource      public-IP detection (cloudflare.trace)
 src/bulkvs        /ipHost API client
