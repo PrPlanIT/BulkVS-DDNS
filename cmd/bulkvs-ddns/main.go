@@ -53,12 +53,14 @@ func main() {
 			return
 		}
 		switch {
+		case cfg.DryRun && res.Unchanged:
+			log.Printf("[dry-run] ip=%s already current; nothing to do", res.CurrentIP)
 		case cfg.DryRun:
-			log.Printf("[dry-run] ip=%s would-put=%v would-prune=%v", res.CurrentIP, res.Added, res.Pruned)
+			log.Printf("[dry-run] ip=%s would-put=%v would-prune=%v", res.CurrentIP, res.Wrote, res.Pruned)
 		case res.Unchanged:
 			log.Printf("ip=%s already current; nothing to do", res.CurrentIP)
 		default:
-			log.Printf("ip=%s asserted (new=%v) pruned=%v", res.CurrentIP, res.Added, res.Pruned)
+			log.Printf("ip=%s asserted (put=%v new=%v) pruned=%v", res.CurrentIP, res.Wrote, res.Added, res.Pruned)
 		}
 	}
 

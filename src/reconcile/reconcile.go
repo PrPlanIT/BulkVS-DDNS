@@ -11,9 +11,10 @@ import (
 // Result summarises one reconcile pass.
 type Result struct {
 	CurrentIP string
-	Added     bool     // the current IP was not previously present
+	Added     bool     // the current IP was not previously present (a new entry)
+	Wrote     bool     // a PUT was issued this pass (entry created or a drifted field corrected)
 	Pruned    []string // stale IPs we removed
-	Unchanged bool     // current IP already present and nothing pruned
+	Unchanged bool     // allowlist already converged: no write issued, nothing pruned
 }
 
 // Reconciler asserts a single public IP as the sole /ipHost entry carrying our
@@ -27,9 +28,13 @@ type Reconciler struct {
 	DryRun      bool
 }
 
-// Run: PUT the current IP (upsert, so Description/MaxOut converge even if the IP
-// already exists), then — when Prune is set — DELETE every other entry we own
-// (old rotated IPs, manual leftovers).
+// Run reconciles the /ipHost allowlist toward ip. It GETs the current entries
+// every pass — that read is the drift detector — but writes only when reality
+// diverges from desired: PUT when our entry is absent or a tracked field has
+// drifted, DELETE the stale ones we own when Prune is set. A converged allowlist
+// is left completely untouched, so a manual edit is corrected on the next pass
+// while a steady state costs zero writes (no Last-Modification churn, no needless
+// load on the API).
 func (r *Reconciler) Run(ctx context.Context, ip string) (Result, error) {
 	res := Result{CurrentIP: ip}
 
@@ -38,20 +43,27 @@ func (r *Reconciler) Run(ctx context.Context, ip string) (Result, error) {
 		return res, fmt.Errorf("list hosts: %w", err)
 	}
 
+	// The entries we own are those carrying our exact Description. Among them,
+	// find the one already asserting the current IP, if any.
 	var ours []bulkvs.Host
-	currentPresent := false
-	for _, h := range hosts {
-		if h.Description != r.Description {
+	var current *bulkvs.Host
+	for i := range hosts {
+		if hosts[i].Description != r.Description {
 			continue
 		}
-		ours = append(ours, h)
-		if h.IP == ip {
-			currentPresent = true
+		ours = append(ours, hosts[i])
+		if hosts[i].IP == ip {
+			current = &hosts[i]
 		}
 	}
-	res.Added = !currentPresent
+	res.Added = current == nil
 
-	if !r.DryRun {
+	// Write only on drift: the desired entry is missing, or its MaxOut differs
+	// from what we'd stamp. An unset MaxOut means "don't manage it", so a value
+	// already on the entry is left as-is rather than blanked.
+	needWrite := current == nil || (r.MaxOut != "" && current.MaxOut != r.MaxOut)
+	res.Wrote = needWrite
+	if needWrite && !r.DryRun {
 		if err := r.Client.PutHost(ctx, bulkvs.Host{IP: ip, Description: r.Description, MaxOut: r.MaxOut}); err != nil {
 			return res, fmt.Errorf("put host %s: %w", ip, err)
 		}
@@ -71,6 +83,6 @@ func (r *Reconciler) Run(ctx context.Context, ip string) (Result, error) {
 		}
 	}
 
-	res.Unchanged = currentPresent && len(res.Pruned) == 0
+	res.Unchanged = !needWrite && len(res.Pruned) == 0
 	return res, nil
 }
