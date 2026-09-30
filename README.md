@@ -1,5 +1,12 @@
 # bulkvs-ddns
 
+<!-- sf:project:start -->
+<!-- sf:project:end -->
+<!-- sf:badges:start -->
+<!-- sf:badges:end -->
+<!-- sf:image:start -->
+<!-- sf:image:end -->
+
 DDNS for a [BulkVS](https://www.bulkvs.com/) SIP trunk.
 
 BulkVS authenticates SIP trunks by source IP — you register your public IP as an
